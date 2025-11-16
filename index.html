@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generador de Códigos QR Estáticos</title>
+    <!-- Tailwind CSS CDN --><script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#11D7E3',
+                        dark: '#0C0E12',
+                        card: '#1C1F25',
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Librería qrcode.js (para generar el QR) --><script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    <!-- Fuente Montserrat --><link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background-color: #0C0E12;
+            color: #E5E7EB;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+
+    <div class="w-full max-w-4xl bg-card border border-primary/20 rounded-xl shadow-2xl p-8 md:p-10">
+        
+        <!-- LOGO AHORA 4 VECES MÁS GRANDE --><div class="flex justify-center mb-8">
+            <img 
+                src="https://i.postimg.cc/s2YtHvzB/IMG_0156.png" 
+                alt="CL Tech Solutions Logo" 
+                class="h-48 w-auto object-contain max-w-xs drop-shadow-[0_0_15px_rgba(17,215,227,0.7)]"
+            >
+        </div>
+        <!-- FIN LOGO --><h1 class="text-3xl font-bold text-center mb-2 text-primary">Generador QR para Mesas</h1>
+        <p class="text-center text-sm text-gray-400 mb-8">Crea códigos QR estáticos para menús, Wi-Fi o promociones. ¡Rápido, limpio y listo para imprimir!</p>
+
+        <div class="grid md:grid-cols-2 gap-8">
+            <!-- Columna de Entrada de Datos --><div class="space-y-6">
+                <!-- Campo de URL --><div>
+                    <label for="url-input" class="block text-sm font-medium mb-2 text-gray-200">
+                        URL o Enlace Destino (Ej. menudigital.com/mesa-5)
+                    </label>
+                    <input 
+                        type="url" 
+                        id="url-input" 
+                        placeholder="https://tumenú.com/hoy" 
+                        class="w-full p-3 border border-gray-600 bg-dark rounded-lg focus:ring-primary focus:border-primary transition"
+                        value="https://cltechsolutions.com/menu-demo"
+                    >
+                </div>
+
+                <!-- Campo de Nombre de Archivo --><div>
+                    <label for="filename-input" class="block text-sm font-medium mb-2 text-gray-200">
+                        Nombre del Archivo (Ej. menu_mesa_01)
+                    </label>
+                    <input 
+                        type="text" 
+                        id="filename-input" 
+                        placeholder="qr_mesa_01" 
+                        class="w-full p-3 border border-gray-600 bg-dark rounded-lg focus:ring-primary focus:border-primary transition"
+                        value="qr_menu_cltech"
+                    >
+                </div>
+
+                <!-- Botón Generar --><button 
+                    id="generate-btn" 
+                    class="w-full py-3 px-4 bg-primary text-dark font-bold rounded-full shadow-lg hover:bg-white transition duration-200 ease-in-out"
+                >
+                    Generar Código QR
+                </button>
+            </div>
+
+            <!-- Columna de Salida y Descarga --><div class="flex flex-col items-center justify-center bg-dark p-6 rounded-lg border border-primary/30">
+                <p id="output-message" class="text-center text-sm mb-4 text-gray-400">
+                    Tu código QR aparecerá aquí. Haz clic para generar.
+                </p>
+                
+                <!-- Contenedor del Código QR (será llenado por qrcode.js) --><div id="qrcode-container" class="p-3 bg-white rounded-md shadow-xl max-w-full">
+                    <!-- El código QR se insertará aquí --></div>
+
+                <!-- Botón Descargar (Inicialmente oculto) --><button 
+                    id="download-btn" 
+                    class="mt-6 py-2 px-6 bg-gray-600 text-white font-semibold rounded-full hover:bg-gray-700 transition duration-200 ease-in-out hidden"
+                >
+                    Descargar PNG
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Declaración de variables DOM
+        const urlInput = document.getElementById('url-input');
+        const filenameInput = document.getElementById('filename-input');
+        const generateBtn = document.getElementById('generate-btn');
+        const downloadBtn = document.getElementById('download-btn');
+        const qrContainer = document.getElementById('qrcode-container');
+        const outputMessage = document.getElementById('output-message');
+
+        let qrcodeInstance = null;
+        let qrCanvasElement = null;
+
+        // Función principal para generar el código QR
+        function generateQRCode() {
+            const url = urlInput.value.trim();
+            if (!url) {
+                outputMessage.textContent = "Por favor, introduce una URL válida.";
+                qrContainer.innerHTML = ''; // Limpiar si no hay URL
+                downloadBtn.classList.add('hidden');
+                return;
+            }
+
+            // 1. Limpiar el contenedor anterior
+            qrContainer.innerHTML = '';
+            
+            // 2. Crear una nueva instancia de QRCode.js en el contenedor
+            // qrcode.js funciona insertando un elemento <img> o <canvas>
+            qrcodeInstance = new QRCode(qrContainer, {
+                text: url,
+                width: 256,
+                height: 256,
+                colorDark : "#000000",
+                colorLight : "#ffffff",
+                correctLevel : QRCode.CorrectLevel.H // Alto nivel de corrección de error
+            });
+
+            // 3. Mostrar mensaje y botón de descarga
+            outputMessage.textContent = `Código QR generado para: ${url}`;
+            downloadBtn.classList.remove('hidden');
+
+            // qrcode.js inserta un <img> o <canvas>. Esperamos 100ms para asegurar que se dibuje.
+            setTimeout(() => {
+                // qrcode.js tiende a usar la última opción: <img> si es posible, o <canvas> si se fuerza.
+                // Buscamos el elemento canvas o img dentro del contenedor.
+                qrCanvasElement = qrContainer.querySelector('img, canvas');
+            }, 100);
+        }
+
+        // Función para descargar el QR
+        function downloadQRCode() {
+            let filename = filenameInput.value.trim() || 'qrcode';
+            filename = filename.replace(/[^a-z0-9]/gi, '_').toLowerCase(); // Sanitizar nombre
+            
+            if (!qrCanvasElement) {
+                outputMessage.textContent = "Error: El código QR no se ha renderizado correctamente. Intenta regenerarlo.";
+                return;
+            }
+            
+            let url;
+            if (qrCanvasElement.tagName.toLowerCase() === 'canvas') {
+                // Si es un canvas, obtener la URL de datos PNG
+                url = qrCanvasElement.toDataURL("image/png");
+            } else if (qrCanvasElement.tagName.toLowerCase() === 'img') {
+                // Si es una imagen (que a veces devuelve qrcode.js), usar su fuente
+                url = qrCanvasElement.src;
+            } else {
+                 outputMessage.textContent = "Error: No se encontró un elemento de imagen o canvas para descargar.";
+                 return;
+            }
+            
+            // Crear un enlace de descarga
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${filename}.png`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            
+            outputMessage.textContent = `¡Descarga de ${filename}.png completada!`;
+        }
+
+        // Asignar Event Listeners
+        generateBtn.addEventListener('click', generateQRCode);
+        downloadBtn.addEventListener('click', downloadQRCode);
+
+        // Generar un código inicial al cargar la página
+        window.onload = function() {
+            generateQRCode();
+        };
+
+    </script>
+</body>
+</html>
